@@ -17,13 +17,15 @@ function loadKeywordPreferences() {
   const selectedKeywordsContainer = document.getElementById('selectedKeywords');
   selectedKeywordsContainer.innerHTML = '';
   
-  // 获取保存的关键词，如果没有则使用默认关键词
-  let savedKeywords = localStorage.getItem('preferredKeywords');
-  let keywords = []; // 默认无关键词
+  // 优先使用本地保存的设置，未保存过时回退到 user-config.js 中的仓库默认值
+  let keywords = [];
   
-  if (savedKeywords) {
+  if (typeof getPreferredKeywords === 'function') {
+    keywords = getPreferredKeywords();
+  } else {
+    const savedKeywords = localStorage.getItem('preferredKeywords');
     try {
-      keywords = JSON.parse(savedKeywords);
+      keywords = savedKeywords ? JSON.parse(savedKeywords) : [];
     } catch (e) {
       console.error('解析保存的关键词失败:', e);
     }
@@ -45,13 +47,15 @@ function loadAuthorPreferences() {
   const selectedAuthorsContainer = document.getElementById('selectedAuthors');
   selectedAuthorsContainer.innerHTML = '';
   
-  // 获取保存的作者，如果没有则为空数组
-  let savedAuthors = localStorage.getItem('preferredAuthors');
-  let authors = []; // 默认无作者
+  // 优先使用本地保存的设置，未保存过时回退到 user-config.js 中的仓库默认值
+  let authors = [];
   
-  if (savedAuthors) {
+  if (typeof getPreferredAuthors === 'function') {
+    authors = getPreferredAuthors();
+  } else {
+    const savedAuthors = localStorage.getItem('preferredAuthors');
     try {
-      authors = JSON.parse(savedAuthors);
+      authors = savedAuthors ? JSON.parse(savedAuthors) : [];
     } catch (e) {
       console.error('解析保存的作者失败:', e);
     }
@@ -401,8 +405,10 @@ function saveSettings() {
   showNotification('Settings saved successfully!', 'success');
 }
 
-// 重置设置
+// 重置设置，恢复到 user-config.js 中的仓库默认值
 function resetSettings() {
+  const defaults = typeof USER_CONFIG !== 'undefined' ? USER_CONFIG : { defaultKeywords: [], defaultAuthors: [] };
+  
   // 重置关键词
   const selectedKeywordsContainer = document.getElementById('selectedKeywords');
   selectedKeywordsContainer.innerHTML = '';
@@ -411,9 +417,19 @@ function resetSettings() {
   const selectedAuthorsContainer = document.getElementById('selectedAuthors');
   selectedAuthorsContainer.innerHTML = '';
   
-  // 显示空标签消息
-  showEmptyTagMessage();
-  showEmptyAuthorMessage();
+  // 恢复默认关键词，若无默认值则显示空标签消息
+  if (defaults.defaultKeywords && defaults.defaultKeywords.length > 0) {
+    defaults.defaultKeywords.forEach(keyword => addKeywordTag(keyword));
+  } else {
+    showEmptyTagMessage();
+  }
+  
+  // 恢复默认作者，若无默认值则显示空标签消息
+  if (defaults.defaultAuthors && defaults.defaultAuthors.length > 0) {
+    defaults.defaultAuthors.forEach(author => addAuthorTag(author));
+  } else {
+    showEmptyAuthorMessage();
+  }
   
   // 显示重置成功提示
   showNotification('Settings reset to default!', 'info');
@@ -483,7 +499,7 @@ function showNotification(message, type = 'success') {
 // 获取GitHub统计数据
 async function fetchGitHubStats() {
   try {
-    const response = await fetch('https://api.github.com/repos/dw-dengwei/daily-arXiv-ai-enhanced');
+    const response = await fetch('https://api.github.com/repos/BillWan-zzzyyy/daily-arXiv-ai-enhanced');
     const data = await response.json();
     const starCount = data.stargazers_count;
     const forkCount = data.forks_count;
