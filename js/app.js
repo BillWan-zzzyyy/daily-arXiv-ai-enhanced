@@ -21,21 +21,20 @@ let previousActiveAuthors = null; // 文本搜索激活时，暂存之前的作�
 
 // 加载用户的关键词设置
 function loadUserKeywords() {
-  const savedKeywords = localStorage.getItem('preferredKeywords');
-  if (savedKeywords) {
+  // 优先使用本地保存的设置，未保存过时回退到 user-config.js 中的仓库默认值
+  if (typeof getPreferredKeywords === 'function') {
+    userKeywords = getPreferredKeywords();
+  } else {
+    const savedKeywords = localStorage.getItem('preferredKeywords');
     try {
-      userKeywords = JSON.parse(savedKeywords);
-      // 默认激活所有关键词
-      activeKeywords = [...userKeywords];
+      userKeywords = savedKeywords ? JSON.parse(savedKeywords) : [];
     } catch (error) {
       console.error('解析关键词失败:', error);
       userKeywords = [];
-      activeKeywords = [];
     }
-  } else {
-    userKeywords = [];
-    activeKeywords = [];
   }
+  // 默认激活所有关键词
+  activeKeywords = [...userKeywords];
   
   // renderKeywordTags();
   renderFilterTags();
@@ -43,21 +42,20 @@ function loadUserKeywords() {
 
 // 加载用户的作者设置
 function loadUserAuthors() {
-  const savedAuthors = localStorage.getItem('preferredAuthors');
-  if (savedAuthors) {
+  // 优先使用本地保存的设置，未保存过时回退到 user-config.js 中的仓库默认值
+  if (typeof getPreferredAuthors === 'function') {
+    userAuthors = getPreferredAuthors();
+  } else {
+    const savedAuthors = localStorage.getItem('preferredAuthors');
     try {
-      userAuthors = JSON.parse(savedAuthors);
-      // 默认激活所有作者
-      activeAuthors = [...userAuthors];
+      userAuthors = savedAuthors ? JSON.parse(savedAuthors) : [];
     } catch (error) {
       console.error('解析作者失败:', error);
       userAuthors = [];
-      activeAuthors = [];
     }
-  } else {
-    userAuthors = [];
-    activeAuthors = [];
   }
+  // 默认激活所有作者
+  activeAuthors = [...userAuthors];
   
   renderFilterTags();
 }
@@ -393,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function fetchGitHubStats() {
   try {
-    const response = await fetch('https://api.github.com/repos/dw-dengwei/daily-arXiv-ai-enhanced');
+    const response = await fetch('https://api.github.com/repos/BillWan-zzzyyy/daily-arXiv-ai-enhanced');
     const data = await response.json();
     const starCount = data.stargazers_count;
     const forkCount = data.forks_count;

@@ -43,6 +43,9 @@ jobs:
         export TOKEN_GITHUB=${{ secrets.TOKEN_GITHUB }}
         export LANGUAGE="${{ vars.LANGUAGE }}"
         export CATEGORIES="${{ vars.CATEGORIES }}"
+        # vars.CATEGORIES 未设置时会传入空字符串，爬虫拿不到默认值，这里兜底
+        # Fall back when vars.CATEGORIES is unset (an empty string bypasses the crawler default)
+        export CATEGORIES="${CATEGORIES:-cs.CV,cs.RO,cs.AI}"
         export MODEL_NAME="${{ vars.MODEL_NAME }}"
         
         # 使用Scrapy爬取
