@@ -141,7 +141,12 @@ jobs:
         export LANGUAGE="${{ vars.LANGUAGE }}"
         export MODEL_NAME="${{ vars.MODEL_NAME }}"
         
-        python enhance.py --data ../data/${today}.jsonl --max_workers 4
+        # 保持 1：spam.dw-dengwei.workers.dev 在 4 并发下会返回 429，
+        # 而 is_sensitive 曾把检测失败当作敏感处理，导致运行 #110 当天内容被整个清空
+        # Keep at 1: spam.dw-dengwei.workers.dev returns 429 under 4x concurrency,
+        # and is_sensitive used to treat a failed check as sensitive, wiping run #110's
+        # entire day of output
+        python enhance.py --data ../data/${today}.jsonl --max_workers 1
         
         # 检查AI处理是否成功 / Check if AI processing was successful
         if [ $? -ne 0 ]; then
