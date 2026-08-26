@@ -73,9 +73,13 @@ def perform_deduplication():
              - "error": 处理错误 / Processing error
     """
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    # 优先使用爬取步骤传入的日期，避免爬取跨过 UTC 午夜后两边算出不同的日期
+    # Prefer the crawl step's date: a crawl that spans UTC midnight would otherwise
+    # make this script look for a file the crawler never wrote
+    today = os.environ.get("CRAWL_DATE") or datetime.now().strftime("%Y-%m-%d")
+    today_dt = datetime.strptime(today, "%Y-%m-%d")
     today_file = f"../data/{today}.jsonl"
-    history_days = 7  # 向前追溯几天的数据进行对比
+    history_days = 3  # 向前追溯几天的数据进行对比
 
     if not os.path.exists(today_file):
         print("今日数据文件不存在 / Today's data file does not exist", file=sys.stderr)
@@ -91,7 +95,11 @@ def perform_deduplication():
         # 收集历史多日 ID 集合
         history_ids = set()
         for i in range(1, history_days + 1):
-            date_str = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+            # 必须以 today 为基准，而不是 datetime.now()：跨午夜时后者会把今日文件本身
+            # 算进历史，导致所有论文都被判为重复
+            # Anchor on today, not datetime.now(): across midnight the latter would pull
+            # today's own file into the history window and mark every paper a duplicate
+            date_str = (today_dt - timedelta(days=i)).strftime("%Y-%m-%d")
             history_file = f"../data/{date_str}.jsonl"
             _, past_ids = load_papers_data(history_file)
             history_ids.update(past_ids)
