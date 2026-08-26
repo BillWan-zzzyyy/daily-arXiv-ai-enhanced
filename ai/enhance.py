@@ -49,14 +49,16 @@ def process_single_item(chain, item: Dict, language: str) -> Dict:
             if resp.status_code == 200:
                 result = resp.json()
                 # 约定接口返回 {"sensitive": true/false, ...}
-                return result.get("sensitive", True)
+                # 响应体缺少该字段同样属于「没拿到判定结果」，与下面两个分支一致，默认放行
+                return result.get("sensitive", False)
             else:
-                # 如果接口异常，默认不触发敏感词
-                print(f"Sensitive check failed with status {resp.status_code}", file=sys.stderr)
-                return True
+                # 接口异常时默认放行本篇，而不是当作敏感丢弃：接口一旦限流/宕机，
+                # fail-closed 会把当天全部内容静默清空（即使 workflow 依然全绿）
+                print(f"Sensitive check failed with status {resp.status_code}, skipping check for this item", file=sys.stderr)
+                return False
         except Exception as e:
-            print(f"Sensitive check error: {e}", file=sys.stderr)
-            return True
+            print(f"Sensitive check error: {e}, skipping check for this item", file=sys.stderr)
+            return False
 
     def check_github_code(content: str) -> Dict:
         """提取并验证 GitHub 链接"""
