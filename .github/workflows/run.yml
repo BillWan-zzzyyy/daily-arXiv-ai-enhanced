@@ -5,9 +5,19 @@ name: arXiv-daily-ai-enhanced
 
 on:
   schedule:
-    # 12:10 UTC = 07:10 美国中部夏令时（CDT, UTC-5）；冬令时（CST, UTC-6）下为 06:10
-    # 12:10 UTC = 07:10 US Central Daylight Time; 06:10 during Standard Time
-    - cron: "10 12 * * *"
+    # 01:30 UTC。目标不是准点触发，而是留足余量：GitHub 的调度器本身会晚发，
+    # 同一个 cron 值曾经稳定晚 1 小时、后来又连续两天晚 10 小时（运行 #112/#113），
+    # 所以没有任何 cron 值能保证准点。本仓库在该时段连续跑过 8 天，延迟稳定在
+    # 约 1.1 小时（实际 02:35–02:45 UTC 触发），跑完约 03:00 UTC，
+    # 相当于美国中部时间前一晚 22:00 —— 早上起来数据已经就绪。
+    # 也不宜再早：arXiv 在 00:00 UTC 前后发布当日批次，太靠近边界会抓到前一天的
+    # （运行 #109 在 00:48 UTC 触发，与前一天重叠 96%）。
+    # 01:30 UTC. The goal is headroom, not punctuality: the scheduler itself fires
+    # late and by an unpredictable amount, so no cron value can guarantee a wall time.
+    # This slot held a steady ~1.1h delay here for 8 consecutive days, finishing
+    # well before morning in US Central. Not earlier: arXiv publishes the day's batch
+    # around 00:00 UTC and crawling too close to that boundary returns stale entries.
+    - cron: "30 1 * * *"
   workflow_dispatch:
 
 
